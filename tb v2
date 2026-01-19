@@ -26,15 +26,17 @@ textLabel.Parent = introGui
 
 -- Non-blocking intro animation
 spawn(function()
-    -- Fade in
+    -- Fade in first message
     local tweenIn = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 0})
     tweenIn:Play()
-    wait(2) -- Display first message
+    tweenIn.Completed:Wait()
+    wait(1.5) -- Display first message
     
-    -- Fade out
-    local tweenOut = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 1})
+    -- Fade out first message
+    local tweenOut = TweenService:Create(textLabel, TweenInfo.new(0.8, Enum.EasingStyle.Linear), {TextTransparency = 1})
     tweenOut:Play()
-    wait(1)
+    tweenOut.Completed:Wait()
+    wait(0.5)
     
     -- Second message
     textLabel.Text = "wag moko iwan baby ah?"
@@ -43,12 +45,30 @@ spawn(function()
     -- Fade in second message
     local tweenIn2 = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 0})
     tweenIn2:Play()
-    wait(2) -- Display second message
+    tweenIn2.Completed:Wait()
+    wait(1.5) -- Display second message
     
     -- Fade out second message
-    local tweenOut2 = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 1})
+    local tweenOut2 = TweenService:Create(textLabel, TweenInfo.new(0.8, Enum.EasingStyle.Linear), {TextTransparency = 1})
     tweenOut2:Play()
-    wait(1)
+    tweenOut2.Completed:Wait()
+    wait(0.5)
+    
+    -- Third message (added)
+    textLabel.Text = "im sorry baby if im annoying sometimes\n i promise ill do my best for you"
+    textLabel.TextSize = 40 -- Slightly smaller for two lines
+    textLabel.TextTransparency = 1
+    
+    -- Fade in third message
+    local tweenIn3 = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 0})
+    tweenIn3:Play()
+    tweenIn3.Completed:Wait()
+    wait(2.5) -- Display third message longer (since it's more meaningful)
+    
+    -- Fade out third message
+    local tweenOut3 = TweenService:Create(textLabel, TweenInfo.new(1, Enum.EasingStyle.Linear), {TextTransparency = 1})
+    tweenOut3:Play()
+    tweenOut3.Completed:Wait()
     
     -- Cleanup
     introGui:Destroy()
