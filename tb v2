@@ -754,5 +754,151 @@ for _, p in ipairs(Players:GetPlayers()) do
     end
 end
 
+-- ========== STOMP EFFECT INTEGRATION (Shared visuals for VIPs, GUI for kqrbyz only) ==========
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Modules = ReplicatedStorage:WaitForChild("Modules")
+
+local StompConfig = {
+    Visuals = {
+        StompEffect = "None",
+        StompEffectEnabled = false,
+    }
+}
+
+local function GetClosestDowned(centerPos)
+    local ClosestRootPart = nil
+    local ShortestDistance = 10
+    for _, Player in pairs(Players:GetPlayers()) do
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            local StateFolder = Player.Character:FindFirstChild("State")
+            if StateFolder then
+                local IsDown = StateFolder:FindFirstChild("Down")
+                local IsDead = StateFolder:FindFirstChild("Dead")
+                if IsDown and IsDead and IsDown.Value == true and IsDead.Value == false then
+                    local RootPart = Player.Character.HumanoidRootPart
+                    local Distance = (RootPart.Position - centerPos).Magnitude
+                    if Distance <= ShortestDistance then
+                        ShortestDistance = Distance
+                        ClosestRootPart = RootPart
+                    end
+                end
+            end
+        end
+    end
+    return ClosestRootPart
+end
+
+local function CreateStompFX(StompFXName, TargetPart, Stomper)
+    if StompFXName == "None" then return end
+    local success, mod = pcall(function()
+        return require(Modules:WaitForChild("Inventory").StompFolder:WaitForChild(StompFXName))
+    end)
+    if success and mod.RunStompFx then
+        mod.RunStompFx(StompFXName, TargetPart, Stomper, Stomper, { function(_) end })
+    end
+end
+
+local function GetStompEffectList()
+    local StompList = {"None"}
+    for _, STOMP in pairs(Modules:WaitForChild("Inventory").StompFolder:GetChildren()) do
+        if STOMP:IsA("ModuleScript") then
+            table.insert(StompList, STOMP.Name)
+        end
+    end
+    return StompList
+end
+
+-- Track last streaks for each VIP
+local lastStreaks = {}
+for _, vipName in ipairs(VIPUsers) do
+    lastStreaks[vipName] = 0
+    local vip = Players:FindFirstChild(vipName)
+    if vip then
+        local ls = vip:FindFirstChild("leaderstats")
+        if ls then
+            local streaks = ls:FindFirstChild("Streaks")
+            if streaks then
+                lastStreaks[vipName] = streaks.Value
+            end
+        end
+    end
+end
+
+-- Stomp detection loop (shared across both clients)
+RunService.Heartbeat:Connect(function()
+    if not StompConfig.Visuals.StompEffectEnabled or StompConfig.Visuals.StompEffect == "None" then return end
+    
+    for _, vipName in ipairs(VIPUsers) do
+        local vip = Players:FindFirstChild(vipName)
+        if vip and vip.Character and vip.Character:FindFirstChild("HumanoidRootPart") then
+            local ls = vip:FindFirstChild("leaderstats")
+            if ls then
+                local streaks = ls:FindFirstChild("Streaks")
+                if streaks then
+                    local curr = streaks.Value
+                    if curr > lastStreaks[vipName] then
+                        lastStreaks[vipName] = curr
+                        task.wait(0.1)  -- Allow state to settle
+                        local centerPos = vip.Character.HumanoidRootPart.Position
+                        local targetRoot = GetClosestDowned(centerPos)
+                        if targetRoot then
+                            CreateStompFX(StompConfig.Visuals.StompEffect, targetRoot, vip)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- GUI only visible to you (kqrbyz)
+if LocalPlayer.Name == "kqrbyz" then
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/cabinet224/roblox-scripts/main/libraries/ui-library.lua"))()
+    Library.FontColor = Color3.fromRGB(255, 255, 255)
+    Library.MainColor = Color3.fromRGB(20, 20, 20)
+    Library.BackgroundColor = Color3.fromRGB(10, 10, 10)
+    Library.AccentColor = Color3.fromRGB(200, 0, 0)
+    Library.OutlineColor = Color3.fromRGB(80, 0, 0)
+    Library.RiskColor = Color3.fromRGB(255, 50, 50)
+
+    local Window = Library:CreateWindow({
+        Title = '<b><font color="rgb(200, 0, 0)">Stomp Effect GUI</font></b>',
+        Center = true,
+        AutoShow = true,
+        TabPadding = 2,
+        MenuFadeTime = 0.2
+    })
+
+    local Tabs = {
+        Main = Window:AddTab('stomp effects'),
+    }
+
+    local Groupboxes = {
+        Effects = Tabs.Main:AddLeftGroupbox("stomp effects"),
+    }
+
+    Groupboxes.Effects:AddToggle('StompEffectEnabled', {
+        Text = 'enabled',
+        Default = false,
+        Callback = function(Value)
+            StompConfig.Visuals.StompEffectEnabled = Value
+        end
+    })
+
+    local StompEffectList = GetStompEffectList()
+    Groupboxes.Effects:AddDropdown('StompEffectList', {
+        Values = StompEffectList,
+        Default = "None",
+        Multi = false,
+        Text = 'stomp effect',
+        Callback = function(Value)
+            StompConfig.Visuals.StompEffect = Value
+        end
+    })
+end
+
 -- Startup message
 StarterGui:SetCore("ChatMakeSystemMessage",{Text="[WaveAI] .e <partial> to toggle ESP | .e debug to toggle debug mode. .g teleports whitelist to you. P switches Triggerbot modes (AimOnly/Always). Q toggles Triggerbot on/off (Always)."})
+StarterGui:SetCore("ChatMakeSystemMessage",{Text="[StompFX] Loaded — visuals shared between VIPs, GUI only for you. Select your effect in the panel."})
