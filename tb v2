@@ -405,7 +405,7 @@ end)
 
 -- ---------- ULTRA FAST TRIGGERBOT ----------
 local TriggerBot = {Mode = 0, Connections={}, BlacklistCache={}} -- Mode: 0 = Off, 1 = AimOnly (hold right click), 2 = Always
-TriggerBot.Settings = {CycleKeybind=Enum.KeyCode.P, ToggleKeybind=Enum.KeyCode.Q, Blacklisted={"Knife"}}
+TriggerBot.Settings = {CycleKeybind=Enum.KeyCode.P, ToggleKeybind=Enum.KeyCode.Q, Blacklisted={"Knife", "[Knife]"}}
 
 -- Cache blacklisted items for instant lookup
 for _,itemName in ipairs(TriggerBot.Settings.Blacklisted) do
